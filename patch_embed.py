@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 from einops import rearrange  # optional, but handy
-# assume get_2d_sincos_pos_embed is already imported
+from diffusers.models.embeddings import get_2d_sincos_pos_embed
 
 class ConcatPatchEmbed(nn.Module):
     """
