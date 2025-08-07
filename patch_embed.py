@@ -3,7 +3,7 @@ import torch.nn as nn
 from einops import rearrange  # optional, but handy
 # assume get_2d_sincos_pos_embed is already imported
 
-class PatchEmbed(nn.Module):
+class ConcatPatchEmbed(nn.Module):
     """
     2D Image to Patch Embedding with support for SD3 cropping,
     now accepting multiple latents and concatenating along the patch dimension.
