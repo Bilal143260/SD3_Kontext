@@ -23,7 +23,6 @@ import itertools
 import logging
 import math
 import os
-import random
 import shutil
 from contextlib import nullcontext
 from pathlib import Path
@@ -38,10 +37,7 @@ from accelerate.utils import DistributedDataParallelKwargs, ProjectConfiguration
 from huggingface_hub import create_repo, upload_folder
 from huggingface_hub.utils import insecure_hashlib
 from PIL import Image
-from PIL.ImageOps import exif_transpose
 from torch.utils.data import Dataset
-from torchvision import transforms
-from torchvision.transforms.functional import crop
 from tqdm.auto import tqdm
 from transformers import CLIPTextModelWithProjection, CLIPTokenizer, PretrainedConfig, T5EncoderModel, T5TokenizerFast
 
@@ -58,7 +54,6 @@ from diffusers.utils import (
     check_min_version,
     is_wandb_available,
 )
-from diffusers.utils.hub_utils import load_or_create_model_card, populate_model_card
 from diffusers.utils.torch_utils import is_compiled_module
 from data_module import SD3KontextDataset, collate_fn
 from parser_helper import parse_args
@@ -71,7 +66,6 @@ from utils import (
     _encode_prompt_with_t5,
     _encode_prompt_with_clip,
     encode_prompt,
-
 )
 
 
