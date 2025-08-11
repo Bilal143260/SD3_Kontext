@@ -503,6 +503,23 @@ def main(args):
         num_workers=args.dataloader_num_workers,
     )
 
+
+    if args.validation_check:
+        validation_dataset = SD3KontextDataset(
+            dataset_name=args.validation_dataset_name,
+            source_column_name=args.source_column,
+            target_column_name=args.target_column,
+            caption_column_name=args.caption_column,
+            size=(args.width, args.height),
+            split="test",  # Test split
+        )
+
+        validation_dataloader = torch.utils.data.DataLoader(
+            validation_dataset,
+            collate_fn=collate_fn,
+            num_workers=args.dataloader_num_workers,
+        )
+
     if not args.train_text_encoder:
         tokenizers = [tokenizer_one, tokenizer_two, tokenizer_three]
         text_encoders = [text_encoder_one, text_encoder_two, text_encoder_three]
@@ -871,13 +888,12 @@ def main(args):
                     torch_dtype=weight_dtype,
                 )
                 pipeline_args = {"prompt": args.validation_prompt}
-                images = log_validation(
+                log_validation(
                     pipeline=pipeline,
                     args=args,
                     accelerator=accelerator,
-                    pipeline_args=pipeline_args,
-                    epoch=epoch,
-                    torch_dtype=weight_dtype,
+                    dataloader=validation_dataloader,
+                    tag="validation",
                 )
                 if not args.train_text_encoder:
                     del text_encoder_one, text_encoder_two, text_encoder_three
@@ -909,26 +925,26 @@ def main(args):
 
         # Final inference
         # Load previous pipeline
-        pipeline = StableDiffusion3Pipeline.from_pretrained(
-            args.output_dir,
-            revision=args.revision,
-            variant=args.variant,
-            torch_dtype=weight_dtype,
-        )
+        # pipeline = StableDiffusion3Pipeline.from_pretrained(
+        #     args.output_dir,
+        #     revision=args.revision,
+        #     variant=args.variant,
+        #     torch_dtype=weight_dtype,
+        # )
 
         # run inference
-        images = []
-        if args.validation_prompt and args.num_validation_images > 0:
-            pipeline_args = {"prompt": args.validation_prompt}
-            images = log_validation(
-                pipeline=pipeline,
-                args=args,
-                accelerator=accelerator,
-                pipeline_args=pipeline_args,
-                epoch=epoch,
-                is_final_validation=True,
-                torch_dtype=weight_dtype,
-            )
+        # images = []
+        # if args.validation_prompt and args.num_validation_images > 0:
+        #     pipeline_args = {"prompt": args.validation_prompt}
+        #     images = log_validation(
+        #         pipeline=pipeline,
+        #         args=args,
+        #         accelerator=accelerator,
+        #         pipeline_args=pipeline_args,
+        #         epoch=epoch,
+        #         is_final_validation=True,
+        #         torch_dtype=weight_dtype,
+        #     )
 
         if args.push_to_hub:
             save_model_card(
