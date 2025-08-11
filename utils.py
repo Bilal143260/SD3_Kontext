@@ -1,4 +1,21 @@
+import os
+from contextlib import nullcontext
+from pathlib import Path
+import numpy as np
+import torch
+import torch.utils.checkpoint
+import transformers
+from accelerate import Accelerator
+from accelerate.utils import DistributedDataParallelKwargs, ProjectConfiguration, set_seed
+from huggingface_hub import create_repo, upload_folder
+from huggingface_hub.utils import insecure_hashlib
+from PIL import Image
+from transformers import CLIPTextModelWithProjection, PretrainedConfig, T5EncoderModel
 
+import diffusers
+from diffusers.optimization import get_scheduler
+from diffusers.training_utils import free_memory
+from diffusers.utils.hub_utils import load_or_create_model_card, populate_model_card
 
 def save_model_card(
     repo_id: str,
@@ -151,24 +168,6 @@ def import_model_class_from_model_name_or_path(
         return T5EncoderModel
     else:
         raise ValueError(f"{model_class} is not supported.")
-
-
-class PromptDataset(Dataset):
-    "A simple dataset to prepare the prompts to generate class images on multiple GPUs."
-
-    def __init__(self, prompt, num_samples):
-        self.prompt = prompt
-        self.num_samples = num_samples
-
-    def __len__(self):
-        return self.num_samples
-
-    def __getitem__(self, index):
-        example = {}
-        example["prompt"] = self.prompt
-        example["index"] = index
-        return example
-
 
 def tokenize_prompt(tokenizer, prompt):
     text_inputs = tokenizer(

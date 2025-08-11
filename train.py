@@ -60,7 +60,7 @@ from diffusers.utils import (
 )
 from diffusers.utils.hub_utils import load_or_create_model_card, populate_model_card
 from diffusers.utils.torch_utils import is_compiled_module
-from data_module import KontextDataset, collate_fn
+from data_module import SD3KontextDataset, collate_fn
 from parser_helper import parse_args
 from utils import ( 
     import_model_class_from_model_name_or_path,
