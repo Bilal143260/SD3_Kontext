@@ -61,7 +61,6 @@ from utils import (
     import_model_class_from_model_name_or_path,
     save_model_card,
     load_text_encoders,
-    PromptDataset,
     tokenize_prompt,
     _encode_prompt_with_t5,
     _encode_prompt_with_clip,
@@ -483,7 +482,7 @@ def main(args):
             safeguard_warmup=args.prodigy_safeguard_warmup,
         )
 
-    train_dataset = KontextDataset(
+    train_dataset = SD3KontextDataset(
         dataset_name=args.dataset_name,
         source_column_name=args.source_column,
         target_column_name=args.target_column,
@@ -701,7 +700,8 @@ def main(args):
             if args.train_text_encoder:
                 models_to_accumulate.extend([text_encoder_one, text_encoder_two, text_encoder_three])
             with accelerator.accumulate(models_to_accumulate):
-                pixel_values = batch["pixel_values"].to(dtype=vae.dtype)
+                pixel_values = batch["target_image"].to(dtype=vae.dtype)
+                cond_pixel_values = batch["source_image"].to(dtype=vae.dtype)
                 prompts = batch["prompts"]
 
                 # encode batch prompts when custom prompts are provided for each image -
@@ -719,6 +719,10 @@ def main(args):
                 model_input = vae.encode(pixel_values).latent_dist.sample()
                 model_input = (model_input - vae.config.shift_factor) * vae.config.scaling_factor
                 model_input = model_input.to(dtype=weight_dtype)
+
+                cond_input = vae.encode(cond_pixel_values).latent_dist.sample()
+                cond_input = (cond_input - vae.config.shift_factor) * vae.config.scaling_factor
+                cond_input = cond_input.to(dtype=weight_dtype)
 
                 # Sample noise that we'll add to the latents
                 noise = torch.randn_like(model_input)
@@ -740,6 +744,10 @@ def main(args):
                 # zt = (1 - texp) * x + texp * z1
                 sigmas = get_sigmas(timesteps, n_dim=model_input.ndim, dtype=model_input.dtype)
                 noisy_model_input = (1.0 - sigmas) * model_input + sigmas * noise
+
+                #concatenate the noisy model input with the conditioning input
+                print(f"noisy_model_input shape: {noisy_model_input.shape}, cond_input shape: {cond_input.shape}")
+                noisy_model_input = [noisy_model_input, cond_input]
 
                 # Predict the noise residual
                 if not args.train_text_encoder:
@@ -765,20 +773,27 @@ def main(args):
                         return_dict=False,
                     )[0]
 
+                # model_pred = model_pred[:, : 1024]
+                model_pred, _ = torch.chunk(model_pred, chunks=2, dim=3)
+
+                print(f"Shape of Model Pred : {model_pred.shape}")
+
                 # Follow: Section 5 of https://huggingface.co/papers/2206.00364.
                 # Preconditioning of the model outputs.
-                if args.precondition_outputs:
-                    model_pred = model_pred * (-sigmas) + noisy_model_input
+                # if args.precondition_outputs:
+                #     model_pred = model_pred * (-sigmas) + noisy_model_input
 
                 # these weighting schemes use a uniform timestep sampling
                 # and instead post-weight the loss
                 weighting = compute_loss_weighting_for_sd3(weighting_scheme=args.weighting_scheme, sigmas=sigmas)
 
                 # flow matching loss
-                if args.precondition_outputs:
-                    target = model_input
-                else:
-                    target = noise - model_input
+                # if args.precondition_outputs:
+                #     target = model_input
+                # else:
+                #     target = noise - model_input
+                target = noise - model_input
+                print(f"Shape of Target : {target.shape}")
 
                 if args.with_prior_preservation:
                     # Chunk the noise and model_pred into two parts and compute the loss on each part separately.
