@@ -1,15 +1,11 @@
-# SD3_Kontext
-This repository contains the code for training SD3 for image editing task. 
 
-#Training Flow
-![Context](sd3_kontext.png)
-
-#Details 
-# Stable Diffusion 3.5 – Image Editing Training (FluxContext-Inspired)
+## SD3_Kontext – Image Editing Training (FluxContext-Inspired)
 
 ## 📌 Project Overview
 This project modifies **Stable Diffusion 3.5** to support **in-context image editing**, inspired by **FLUX.1 Kontext**’s ability to understand both a target and a conditional image, enabling precise edits while preserving consistency across iterations.
 
+##Training Flow
+![Context](sd3_kontext.png)
 ---
 
 ## 🚀 Training Approach
