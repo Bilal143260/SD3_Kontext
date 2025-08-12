@@ -4,7 +4,7 @@
 ## 📌 Project Overview
 This project modifies **Stable Diffusion 3.5** to support **in-context image editing**, inspired by **FLUX.1 Kontext**’s ability to understand both a target and a conditional image, enabling precise edits while preserving consistency across iterations.
 
-##Training Flow
+## Training Flow
 ![Context](sd3_kontext.png)
 ---
 
